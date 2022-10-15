@@ -1,4 +1,5 @@
 ## EAI Onboarding Powershell Script
+### Main Functionality
 1. Mounting FSx
 2. Checks validity of AD account provided
 3. Creates main folder with project name as title
