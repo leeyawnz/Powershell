@@ -1,3 +1,4 @@
+# EAI Soft Offboarding Script
 # Variables from AWS
 $username = ''
 $password = ''
