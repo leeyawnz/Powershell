@@ -1,3 +1,4 @@
+# EAI Onboarding Script
 # Variables from AWS
 $username = ''
 $password = ''
