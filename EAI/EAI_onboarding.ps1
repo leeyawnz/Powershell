@@ -51,7 +51,7 @@ if ($checkMount -eq $True) {
                     Write-Output 'Granting Permissions: Successful'
 
                     # Transferring Ownership
-                    $newOwner = New-Object System.Security.Principal.Ntaccount($ADaccount)
+                    $newOwner = New-Object System.Security.Principal.Ntaccount($ADAccount)
                     $accessInfo.SetOwner($newOwner)
                     $accessInfo | Set-Acl -Path "$FSxPath\$projectName"
                     $ownershipInfo = (($accessInfo.Owner).Split('\')[-1]) -eq "$ADAccount"
