@@ -1,4 +1,3 @@
-# EAI Soft Offboarding Script
 # Variables from AWS
 $username = ''
 $password = ''
@@ -27,12 +26,19 @@ if ($checkMount -eq $True) {
         if ($checkProjectFolder -eq $True) {
             Write-Output "Checking Project Folder: $projectName Folder Found"
 
-            # Transferring Ownership
-            $adminOwner = New-Object System.Security.Principal.Ntaccount($EAIAccount)
-            $accessInfo = Get-Acl -Path "$FSxPath\$projectName"
-            $accessInfo.SetOwner($EAIAccount)
+            # Regaining ownership of project folder
+            $EAIOwner = New-Object System.Security.Principal.Ntaccount($EAIAccount)
+            $accessInfo.SetOwner($EAIOwner)
             $accessInfo | Set-Acl -Path "$FSxPath\$projectName"
-
+            $ownershipInfo = ($accessInfo.Owner) -eq "$EAIAccount"
+            if ($ownershipInfo -eq $True) {
+                Write-Output 'Regaining Ownership: Successful'
+            } else {
+                Write-Output 'Regaining Ownership: Unsuccessful'
+                # Revert ownership(?)
+                Write-Output '==='
+                Write-Output 'Soft Offboarding: Unsuccessful'
+            }
         } else {
             Write-Output "Checking Project Folder: $projectName Folder Not Found"
             Write-Output '==='
