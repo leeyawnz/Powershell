@@ -16,7 +16,7 @@ if ($checkMount -eq $True) {
     Write-Output 'Mounting FSx: Successful'
 
     # Checking if AD account exists
-    $ADCheck = (Get-LocalUser -Name "$ADAccount").Name -eq $ADAccount
+    $ADCheck = (Get-LocalUser -Name "$ADAccount").Name -eq $ADAccount # Check if Get-LocalUser or Get-ADUser
     if ($ADCheck -eq $True) {
         Write-Output "Checking AD Account: $ADAccount Found"
 
@@ -48,30 +48,6 @@ if ($checkMount -eq $True) {
                 $permissionPart2 = ($accessInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).FileSystemRights -eq $accessArray
                 if ($permissionPart1 -eq $True -And $permissionPart2 -eq $True) {
                     Write-Output 'Granting Permissions: Successful'
-
-                    # Transferring Ownership
-                    $newOwner = New-Object System.Security.Principal.Ntaccount($ADAccount)
-                    $accessInfo.SetOwner($newOwner)
-                    $accessInfo | Set-Acl -Path "$FSxPath\$projectName"
-                    
-                    $ownershipInfo = (($accessInfo.Owner).Split('\')[-1]) -eq "$ADAccount"
-                    if ($ownershipInfo -eq $True) {
-                        Write-Output 'Transferring Ownership: Successful'
-                        Write-Output '====='
-                        $onboardedPath = (Get-Acl -Path "$FSxPath\$projectName" | Select-Object Path).Path
-                        Write-Output "Path: $onboardedPath"
-                        $onboardedOwner = Get-Acl -Path "$FSxPath\$projectName" | Select-Object Owner
-                        Write-Output "Owner: $onboardedOwner"
-                        $onboardedInfo = ((Get-Acl -Path "$FSxPath\$projectName").Access | Where-Object {$_.IdentityReference -match $ADAccount}).FileSystemRights
-                        Write-Output "Permissions: $onboardedInfo"
-                        Write-Output '====='
-                        Write-Output 'Onboarding: Successful'
-                    } else {
-                        Write-Output 'Transferring Ownership: Unsuccessful'
-                        Remove-Item -Path "$FSxPath\$projectName" -Recurse
-                        Write-Output '====='
-                        Write-Output 'Onboarding: Unsuccessful'
-                    }
                 } else {
                     Write-Output 'Granting Permissions: Unsuccessful'
                     Remove-Item -Path "$FSxPath\$projectName" -Recurse
