@@ -1,78 +1,77 @@
-# Variables from AWS
-$username = ''
-$password = ''
-$FSxPath = 'C:\Users\Administrator\Desktop'
-# Variables from PMT
-$projectName = 'TestProject'
-$ADAccount = 'testing'
+# Variables by AWS
+$Username = ''
+$Password = ''
+$FSxPath = '' # 'C:\Users\Administrator\Desktop'
+# Variables by PMT
+$ADAccount = '' # 'testing' ; need to create New-LocalUser
+$ProjectName = '' # 'TestProject'
 
 
-Write-Output 'EAI Onboarding Script'
-Write-Output '====='
 # Mount FSx
-# net use
-$checkMount = Test-Path $FSxPath
-if ($checkMount -eq $True) {
+# net use /user:username password
+$CheckMount = Test-Path "$FSxPath"
+if ($CheckMount -eq $True) {
     Write-Output 'Mounting FSx: Successful'
 
-    # Checking if AD account exists
-    $ADCheck = (Get-LocalUser -Name "$ADAccount").Name -eq $ADAccount # Check if Get-LocalUser or Get-ADUser
-    if ($ADCheck -eq $True) {
-        Write-Output "Checking AD Account: $ADAccount Found"
+    # Check if AD user exists
+    $CheckADUser = (Get-LocalUser -Name "$ADAccount").Name -eq $ADAccount # Not sure syntax should use Get-ADUser
+    if ($CheckADUser -eq $True) {
+        Write-Output "Checking AD User: $ADAccount Found"
 
-        # Creating Main Folder for Project
-        $createMainFolder = New-Item -ItemType Directory -Path "$FSxPath\$projectName"
-        $checkingMainFolder = Test-Path "$FSxPath\$projectName"
+        # Creates project main folder
+        $MainFolder = New-Item -ItemType Directory -Path "$FSxPath\$ProjectName"
+        $CheckMainFolder = Test-Path "$FSxPath\$ProjectName"
         if ($checkingMainFolder -eq $True) {
             Write-Output 'Creating Main Folder: Successful'
-
-            # Creating Subfolders in Main folder
-            $folderArray = 'Inbox', 'Inbox-Src', 'Inbox-logs', 'Outbox', 'Outbox-Src', 'Outbox-logs'
-            ForEach ($dir in $folderArray) {
-                $createSubfolders = New-Item -ItemType Directory -Path "$FSxPath\$projectName\$dir"
+            
+            # Creates project subfolders
+            $FolderArray = 'Inbox', 'Inbox-logs', 'Inbox-Src', 'Outbox', 'Outbox-logs', 'Outbox-Src'
+            ForEach ($Dir in $FolderArray) {
+                $createSubfolder = New-Item -ItemType Directory -Path "$FSxPath\$ProjectName\$Dir"
             }
-            $noOfSubfolders = (Get-ChildItem -Directory -Path "$FSxPath\$projectName" | Measure-Object).Count
-            if ($noOfSubfolders -eq 6) {
-                Write-Output "Number of Subfolders: $noOfSubfolders"
+            $CheckSubfolders = (Get-ChildItem -Directory -Path "$FSxPath\$ProjectName" | Measure-Object).Count
+            if ($CheckSubfolders -eq 6) {
+                Write-Output "Number of Subfolders: $CheckSubfolders"
                 Write-Output 'Creating Subfolders: Successful'
 
-                # Granting Permissions
-                $accessArray = 'CreateFiles', 'WriteExtendedAttributes', 'WriteAttributes', 'Delete', 'ReadAndExecute', 'Synchronize'
-                $accessInfo = Get-Acl -Path "$FSxPath\$projectName"
-                ForEach ($access in $accessArray) {
-                    $accessObject = New-Object System.Security.AccessControl.FileSystemAccessRule("$ADAccount", "$access", "Allow")
-                    $accessInfo.AddAccessRule($accessObject)
-                    Set-Acl -Path "$FSxPath\$projectName" -AclObject $accessInfo
-                }
-                $permissionPart1 = (($accessInfo.Access.IdentityReference | Where-Object {$_.Value -match "$ADAccount"}).Value.Split('\')[-1]) -eq "$ADAccount"
-                $permissionPart2 = ($accessInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).FileSystemRights -eq $accessArray
-                if ($permissionPart1 -eq $True -And $permissionPart2 -eq $True) {
+                # Granting permissions
+                $MainFolderInfo = Get-Acl -Path "$FSxPath\$ProjectName"
+                $AccessArray = 'CreateFiles, WriteExtendedAttributes, WriteAttributes, Delete, ReadAndExecute, Synchronize'
+                $Inheritance = 'ContainerInherit, ObjectInherit'
+                $Permissions = New-Object System.Security.AccessControl.FileSystemAccessRule("$ADAccount", "$AccessArray", "$Inheritance", "None", "Allow")
+                $MainFolderInfo.AddAccessRule($Permissions)
+                Set-Acl -Path "$FSxPath\$ProjectName" -AclObject $MainFolderInfo 
+                $CheckPermissionsPart1 = (($MainFolderInfo.Access.IdentityReference) | Where-Object {$_.Value -match "$ADAccount"}).Value.Split('\')[-1] -eq "$ADAccount"
+                $CheckPermissionsPart2 = ($MainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).FileSystemRights -eq $AccessArray
+                if ($CheckPermissionsPart1 -eq $True -And $CheckPermissionsPart2 -eq $True) {
                     Write-Output 'Granting Permissions: Successful'
+                    Write-Output '==='
+                    Write-Output 'Onboarding: Successful'
                 } else {
                     Write-Output 'Granting Permissions: Unsuccessful'
-                    Remove-Item -Path "$FSxPath\$projectName" -Recurse
-                    Write-Output '====='
+                    Remove-Item -Path "$FSxPath\$ProjectName" -Recurse
+                    Write-Output '==='
                     Write-Output 'Onboarding: Unsuccessful'
                 }
             } else {
-                Write-Output "Number of Subfolders: $noOfSubfolders"
+                Write-Output "Number of Subfolders: $CheckSubfolders"
                 Write-Output 'Creating Subfolders: Unsuccessful'
-                Remove-Item -Path "$FSxPath\$projectName" -Recurse
-                Write-Output '====='
+                Remove-Item -Path "$FSxPath\$ProjectName" -Recurse
+                Write-Output '==='
                 Write-Output 'Onboarding: Unsuccessful'
             }
         } else {
-            Write-Output "Creating Main Folder: Unsuccessful"
-            Write-Output '====='
+            Write-Output 'Creating Main Folder: Unsuccessful'
+            Write-Output '==='
             Write-Output 'Onboarding: Unsuccessful'
         }
     } else {
-        Write-Output "Checking AD Account: $ADAccount Not Found"
-        Write-Output '====='
+        Write-Output "Checking AD User: $ADAccount Not Found"
+        Write-Output '==='
         Write-Output 'Onboarding: Unsuccessful'
     }
 } else {
     Write-Output 'Mounting FSx: Unsuccessful'
-    Write-Output '====='
+    Write-Output '==='
     Write-Output 'Onboarding: Unsuccessful'
-}
+} 
