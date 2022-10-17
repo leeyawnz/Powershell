@@ -1,51 +1,55 @@
 # Variables from AWS
-$username = ''
-$password = ''
-$FSxPath = 'C:\Users\Administrator\Desktop'
-$EAIAccount = ''
-# Variables from PMT
-$projectName = 'TestProject'
-$ADAccount = 'testing'
+$Username = ''
+$Password = ''
+$FSxPath = '' # 'C:\Users\Administrator\Desktop'
+# Variables by PMT
+$ADAccount = '' # 'testing' ; need to create New-LocalUser
+$ProjectName = '' # 'TestProject'
 
-
-Write-Output 'EAI Onboarding Script'
+Write-Output 'EAI Soft Offboarding Script'
 Write-Output '====='
 # Mount FSx
 # net use
-$checkMount = Test-Path $FSxPath
-if ($checkMount -eq $True) {
+$CheckMount = Test-Path $FSxPath
+if ($CheckMount -eq $True) {
     Write-Output 'Mounting FSx: Successful'
 
     # Checking if AD account exists
-    $ADCheck = (Get-LocalUser -Name "$ADAccount").Name -eq $ADAccount
-    if ($ADCheck -eq $True) {
-        Write-Output "Checking AD Account: $ADAccount Found"
+    $CheckADUser = (Get-LocalUser -Name "$ADAccount").Name -eq $ADAccount
+    if ($CheckADUser -eq $True) {
+        Write-Output "Checking AD User: $ADAccount Found"
 
         #Checking if folder with project name exists
-        $checkProjectFolder = Test-Path "$FSxPath\$projectName"
-        if ($checkProjectFolder -eq $True) {
-            Write-Output "Checking Project Folder: $projectName Folder Found"
+        $CheckMainFolder = Test-Path "$FSxPath\$ProjectName"
+        if ($CheckMainFolder -eq $True) {
+            Write-Output "Checking Main Folder: $ProjectName Folder Found"
 
-            # Regaining ownership of project folder
-            $EAIOwner = New-Object System.Security.Principal.Ntaccount($EAIAccount)
-            $accessInfo.SetOwner($EAIOwner)
-            $accessInfo | Set-Acl -Path "$FSxPath\$projectName"
-            $ownershipInfo = ($accessInfo.Owner) -eq "$EAIAccount"
-            if ($ownershipInfo -eq $True) {
-                Write-Output 'Regaining Ownership: Successful'
+            # Removing Permissions
+            $MainFolderInfo = Get-Acl -Path "$FSxPath\$ProjectName"
+            $Access = 'FullControl'
+            $Inheritance = 'ContainerInherit, ObjectInherit'
+            $Permissions = New-Object System.Security.AccessControl.FileSystemAccessRule("$ADAccount", "$Access", "$Inheritance", "None", "Deny")
+            $MainFolderInfo.AddAccessRule($Permissions)
+            Set-Acl -Path "$FSxPath\$ProjectName" -AclObject $MainFolderInfo
+            $CheckPermissionsPart1 = (($MainFolderInfo.Access.IdentityReference) | Where-Object {$_.Value -match "$ADAccount"}).Value.Split('\')[-1] -eq "$ADAccount"
+            $CheckPermissionsPart2 = ($MainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).FileSystemRights -eq $AccessArray
+            if ($CheckPermissionsPart1 -eq $True -And $CheckPermissionsPart2 -eq $True) {
+                Write-Output 'Removing Permissions: Successful'
+                Write-Output '==='
+                Write-Output 'Soft Offboarding: Successful'
             } else {
-                Write-Output 'Regaining Ownership: Unsuccessful'
-                # Revert ownership(?)
+                Write-Output 'Removing Permissions: Unsuccessful'
+                Remove-Item -Path "$FSxPath\$ProjectName" -Recurse
                 Write-Output '==='
                 Write-Output 'Soft Offboarding: Unsuccessful'
             }
         } else {
-            Write-Output "Checking Project Folder: $projectName Folder Not Found"
+            Write-Output "Checking Main Folder: $ProjectName Folder Not Found"
             Write-Output '==='
             Write-Output 'Soft Offboarding: Unsuccessful'
         }
     } else {
-        Write-Output "Checking AD Account: $ADAccount Not Found"
+        Write-Output "Checking AD User: $ADAccount Not Found"
         Write-Output '====='
         Write-Output 'Soft Offboarding: Unsuccessful'
     }
