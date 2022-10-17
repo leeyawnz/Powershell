@@ -6,7 +6,8 @@ $FSxPath = '' # 'C:\Users\Administrator\Desktop'
 $ADAccount = '' # 'testing' ; need to create New-LocalUser
 $ProjectName = '' # 'TestProject'
 
-
+Write-Output 'EAI Onboarding Script'
+Write-Output '====='
 # Mount FSx
 # net use /user:username password
 $CheckMount = Test-Path "$FSxPath"
