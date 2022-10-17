@@ -54,11 +54,6 @@ if ($checkMount -eq $True) {
                     $accessInfo.SetOwner($newOwner)
                     $accessInfo | Set-Acl -Path "$FSxPath\$projectName"
                     
-                    # Need to read documentation
-                    #ForEach ($dir in $folderArray) {
-                    #    $accessInfo | Set-Acl -Path "$FSxPath\$projectName\$dir"
-                    #}
-                    
                     $ownershipInfo = (($accessInfo.Owner).Split('\')[-1]) -eq "$ADAccount"
                     if ($ownershipInfo -eq $True) {
                         Write-Output 'Transferring Ownership: Successful'
