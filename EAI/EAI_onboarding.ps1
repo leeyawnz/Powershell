@@ -47,6 +47,13 @@ if ($CheckMount -eq $True) {
                 if ($CheckPermissionsPart1 -eq $True -And $CheckPermissionsPart2 -eq $True) {
                     Write-Output 'Granting Permissions: Successful'
                     Write-Output '====='
+                    $Path = $MainFolderInfo | Select-Object Path
+                    $IdentityReference = ($MainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).IdentityReference
+                    $AccessGiven = ($MainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).FileSystemRights
+                    Write-Output "Path: $Path"
+                    Write-Output "AD User: $IdentityReference"
+                    Write-Output "Access Given: $AccessGiven"
+                    Write-Output "======"
                     Write-Output 'Onboarding: Successful'
                 } else {
                     Write-Output 'Granting Permissions: Unsuccessful'
