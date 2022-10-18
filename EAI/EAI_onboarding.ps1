@@ -46,33 +46,33 @@ if ($CheckMount -eq $True) {
                 $CheckPermissionsPart2 = ($MainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).FileSystemRights -eq $AccessArray
                 if ($CheckPermissionsPart1 -eq $True -And $CheckPermissionsPart2 -eq $True) {
                     Write-Output 'Granting Permissions: Successful'
-                    Write-Output '==='
+                    Write-Output '====='
                     Write-Output 'Onboarding: Successful'
                 } else {
                     Write-Output 'Granting Permissions: Unsuccessful'
                     Remove-Item -Path "$FSxPath\$ProjectName" -Recurse
-                    Write-Output '==='
+                    Write-Output '====='
                     Write-Output 'Onboarding: Unsuccessful'
                 }
             } else {
                 Write-Output "Number of Subfolders: $CheckSubfolders"
                 Write-Output 'Creating Subfolders: Unsuccessful'
                 Remove-Item -Path "$FSxPath\$ProjectName" -Recurse
-                Write-Output '==='
+                Write-Output '====='
                 Write-Output 'Onboarding: Unsuccessful'
             }
         } else {
             Write-Output 'Creating Main Folder: Unsuccessful'
-            Write-Output '==='
+            Write-Output '====='
             Write-Output 'Onboarding: Unsuccessful'
         }
     } else {
         Write-Output "Checking AD User: $ADAccount Not Found"
-        Write-Output '==='
+        Write-Output '====='
         Write-Output 'Onboarding: Unsuccessful'
     }
 } else {
     Write-Output 'Mounting FSx: Unsuccessful'
-    Write-Output '==='
+    Write-Output '====='
     Write-Output 'Onboarding: Unsuccessful'
 } 
