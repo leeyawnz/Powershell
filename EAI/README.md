@@ -28,8 +28,13 @@ For other errors, do check for typos in script.
 New-LocalUser 'TestUser' -NoPassword
 ```
 2. Replace values
+<br>
 $username = ''
+<br>
 $password = ''
+<br>
 $FSxPath = 'C:\Users\Administrator\Desktop'
+<br>
 $ADAccount = 'TestUser'
+<br>
 $ProjectName = 'TestProject'
