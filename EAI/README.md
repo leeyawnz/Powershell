@@ -8,19 +8,6 @@
 
 > Note: Should one step in the script fail or is unsuccessfully executed, the script will delete created folders and subfolders.
 
-
-## Troubleshooting:
-### Mounting FSx: Unsuccessful
-This means that the FSx Path is not found. <br>
-Check if FSx command in AWS is correct for the right environment.<br>
-Check if username and password is pulled correctly from AWS.<br>
-
-### Checking AD Account: $ADAccount Not Found 
-This means that the AD account provided cannot be found.<br>
-Check if the AD account provided is valid (Not sure how to check if you cannot access console)<br>
-<br>
-For other errors, do check for typos in script.
-
 ## Testing:
 ### Local Machine Testing:
 1. Create a localuser
@@ -37,3 +24,15 @@ For other errors, do check for typos in script.
 >$ADAccount = 'TestUser'
 ><br>
 >$ProjectName = 'TestProject'
+
+## Troubleshooting:
+### Mounting FSx: Unsuccessful
+This means that the FSx Path is not found. <br>
+Check if FSx command in AWS is correct for the right environment.<br>
+Check if username and password is pulled correctly from AWS.<br>
+
+### Checking AD Account: $ADAccount Not Found 
+This means that the AD account provided cannot be found.<br>
+Check if the AD account provided is valid (Not sure how to check if you cannot access console)<br>
+<br>
+For other errors, do check for typos in script.
