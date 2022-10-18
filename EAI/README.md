@@ -20,3 +20,16 @@ This means that the AD account provided cannot be found.<br>
 Check if the AD account provided is valid (Not sure how to check if you cannot access console)<br>
 <br>
 For other errors, do check for typos in script.
+
+## Testing:
+### Local Machine Testing:
+1. Create a localuser
+```
+New-LocalUser 'TestUser' -NoPassword
+```
+2. Replace values
+$username = ''
+$password = ''
+$FSxPath = 'C:\Users\Administrator\Desktop'
+$ADAccount = 'TestUser'
+$ProjectName = 'TestProject'
