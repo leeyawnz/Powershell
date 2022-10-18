@@ -1,21 +1,21 @@
 # Variables by AWS
-$Username = ''
-$Password = ''
-$FSxPath = '' # 'C:\Users\Administrator\Desktop'
+$Username = '' # Need to pull from AWS
+$Password = '' # Need to pull from AWS
+$FSxPath = '' # For Local Testing: 'C:\Users\Administrator\Desktop' ; For FSx Testing: 'Z:\'
 # Variables by PMT
-$ADAccount = '' # 'testing' ; need to create New-LocalUser
-$ProjectName = '' # 'TestProject'
+$ADAccount = '' # For Local Testing: need to create New-LocalUser ; For FSx Testing: Use random AD Account(?)
+$ProjectName = ''
 
 Write-Output 'EAI Onboarding Script'
 Write-Output '====='
 # Mount FSx
-# net use /user:username password
+# net use /user:username password  # Adjust depending on SIT/PROD
 $CheckMount = Test-Path "$FSxPath"
 if ($CheckMount -eq $True) {
     Write-Output 'Mounting FSx: Successful'
 
     # Check if AD user exists
-    $CheckADUser = (Get-LocalUser -Name "$ADAccount").Name -eq $ADAccount # Not sure syntax should use Get-ADUser
+    $CheckADUser = (Get-LocalUser -Name "$ADAccount").Name -eq $ADAccount # Not sure if syntax should use Get-ADUser
     if ($CheckADUser -eq $True) {
         Write-Output "Checking AD User: $ADAccount Found"
 
