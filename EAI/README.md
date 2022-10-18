@@ -24,17 +24,16 @@ For other errors, do check for typos in script.
 ## Testing:
 ### Local Machine Testing:
 1. Create a localuser
-```
-New-LocalUser 'TestUser' -NoPassword
-```
+>```
+>New-LocalUser 'TestUser' -NoPassword
+>```
 2. Replace values
-<br>
-$username = ''
-<br>
-$password = ''
-<br>
-$FSxPath = 'C:\Users\Administrator\Desktop'
-<br>
-$ADAccount = 'TestUser'
-<br>
-$ProjectName = 'TestProject'
+>$username = ''
+><br>
+>$password = ''
+><br>
+>$FSxPath = 'C:\Users\Administrator\Desktop'
+><br>
+>$ADAccount = 'TestUser'
+><br>
+>$ProjectName = 'TestProject'
