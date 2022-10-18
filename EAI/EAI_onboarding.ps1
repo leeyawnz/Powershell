@@ -22,7 +22,7 @@ if ($CheckMount -eq $True) {
         # Creates project main folder
         $MainFolder = New-Item -ItemType Directory -Path "$FSxPath\$ProjectName"
         $CheckMainFolder = Test-Path "$FSxPath\$ProjectName"
-        if ($checkingMainFolder -eq $True) {
+        if ($checkMainFolder -eq $True) {
             Write-Output 'Creating Main Folder: Successful'
             
             # Creates project subfolders
