@@ -1,85 +1,88 @@
-# Variables by AWS
-$Username = '' # Need to pull from AWS
-$Password = '' # Need to pull from AWS
-$FSxPath = '' # For Local Testing: 'C:\Users\Administrator\Desktop' ; For FSx Testing: 'Z:\'
-# Variables by PMT
-$ADAccount = '' # For Local Testing: need to create New-LocalUser ; For FSx Testing: Use random AD Account(?)
-$ProjectName = ''
+# Variables
+param($USERNAME, $PASSWORD, $FSXMOUNTPATH, $ADACCOUNT, $PROJECTNAME)
+$FSXPATH = 'Z:'
+
+# Global Functions
+function outputScript($result, $message) {
+    $DATE = New-Date -UFormat "%B/%d/%Y %T"
+    if ($result -eq 0) {
+        Write-Output "$DATE [FAILED] $message"
+        break
+    }
+    Write-Output "$DATE [SUCCESS] $message"
+}
 
 Write-Output 'EAI Onboarding Script'
 Write-Output '====='
-# Mount FSx
-# net use /user:username password  # Adjust depending on SIT/PROD
-$CheckMount = Test-Path "$FSxPath"
-if ($CheckMount -eq $True) {
-    Write-Output 'Mounting FSx: Successful'
+# Mounting FSx
+net use $FSXMOUNTPATH /user:$USERNAME $PASSWORD
+$checkMount = Test-Path "$FSXPATH\"
+if ($checkMount -eq $False) {
+    outputScript 0 'FSx path not found.'
+}
+outputScript 1 'Successfully Mounted FSx'
 
-    # Check if AD user exists
-    $CheckADUser = (Get-LocalUser -Name "$ADAccount").Name -eq $ADAccount # Not sure if syntax should use Get-ADUser
-    if ($CheckADUser -eq $True) {
-        Write-Output "Checking AD User: $ADAccount Found"
+# Checking AD user
+$ADPassword = ConvertTo-SecureString -String $PASSWORD -AsPlainText -Force
+$credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $USERNAME, $ADPASSWORD
+$ADSearchResult = (Get-ADUser -Filter 'SamAccountName -like "$ADACCOUNT"' -Credential $credential).Name
+if ($ADSearchResult -ne $ADACCOUNT) {
+    outputScript 0 "$ADACCOUNT not found. Please verify AD account."
+}
+outputScript 1 "$ADACCOUNT found. Proceed to create default main folder"
 
-        # Creates project main folder
-        $MainFolder = New-Item -ItemType Directory -Path "$FSxPath\$ProjectName"
-        $CheckMainFolder = Test-Path "$FSxPath\$ProjectName"
-        if ($checkMainFolder -eq $True) {
-            Write-Output 'Creating Main Folder: Successful'
-            
-            # Creates project subfolders
-            $FolderArray = 'Inbox', 'Inbox-logs', 'Inbox-Src', 'Outbox', 'Outbox-logs', 'Outbox-Src'
-            ForEach ($Dir in $FolderArray) {
-                $createSubfolder = New-Item -ItemType Directory -Path "$FSxPath\$ProjectName\$Dir"
-            }
-            $CheckSubfolders = (Get-ChildItem -Directory -Path "$FSxPath\$ProjectName" | Measure-Object).Count
-            if ($CheckSubfolders -eq 6) {
-                Write-Output "Number of Subfolders: $CheckSubfolders"
-                Write-Output 'Creating Subfolders: Successful'
+# Creating main folder
+$createMainFolder = New-Item -ItemType Directory -Path "$FSXPATH\$PROJECTNAME"
+$checkMainFolder = Test-Path "$FSXPATH\$PROJECTNAME"
+if ($checkMainFolder -eq $False) {
+    outputScript 0 'Project folder not created.'
+}
+outputScript 1 "$PROJECTNAME folder created"
 
-                # Granting permissions
-                $MainFolderInfo = Get-Acl -Path "$FSxPath\$ProjectName"
-                $AccessArray = 'CreateFiles, WriteExtendedAttributes, WriteAttributes, Delete, ReadAndExecute, Synchronize'
-                $Inheritance = 'ContainerInherit, ObjectInherit'
-                $Permissions = New-Object System.Security.AccessControl.FileSystemAccessRule("$ADAccount", "$AccessArray", "$Inheritance", "None", "Allow")
-                $MainFolderInfo.AddAccessRule($Permissions)
-                Set-Acl -Path "$FSxPath\$ProjectName" -AclObject $MainFolderInfo 
-                $CheckPermissionsPart1 = (($MainFolderInfo.Access.IdentityReference) | Where-Object {$_.Value -match "$ADAccount"}).Value.Split('\')[-1] -eq "$ADAccount"
-                $CheckPermissionsPart2 = ($MainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).FileSystemRights -eq $AccessArray
-                if ($CheckPermissionsPart1 -eq $True -And $CheckPermissionsPart2 -eq $True) {
-                    Write-Output 'Granting Permissions: Successful'
-                    Write-Output '====='
-                    $Path = $MainFolderInfo | Select-Object Path
-                    $IdentityReference = ($MainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).IdentityReference
-                    $AccessGiven = ($MainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADAccount"}).FileSystemRights
-                    Write-Output "Path: $Path"
-                    Write-Output "AD User: $IdentityReference"
-                    Write-Output "Access Given: $AccessGiven"
-                    Write-Output "======"
-                    Write-Output 'Onboarding: Successful'
-                } else {
-                    Write-Output 'Granting Permissions: Unsuccessful'
-                    Remove-Item -Path "$FSxPath\$ProjectName" -Recurse
-                    Write-Output '====='
-                    Write-Output 'Onboarding: Unsuccessful'
-                }
-            } else {
-                Write-Output "Number of Subfolders: $CheckSubfolders"
-                Write-Output 'Creating Subfolders: Unsuccessful'
-                Remove-Item -Path "$FSxPath\$ProjectName" -Recurse
-                Write-Output '====='
-                Write-Output 'Onboarding: Unsuccessful'
-            }
-        } else {
-            Write-Output 'Creating Main Folder: Unsuccessful'
-            Write-Output '====='
-            Write-Output 'Onboarding: Unsuccessful'
-        }
-    } else {
-        Write-Output "Checking AD User: $ADAccount Not Found"
-        Write-Output '====='
-        Write-Output 'Onboarding: Unsuccessful'
+# Creating subfolders
+$FOLDERARRAY = 'Inbox', 'Inbox-logs', 'Inbox-Src', 'Outbox', 'Outbox-logs', 'Outbox-Src'
+ForEach ($DIR in $FOLDERARRAY) {
+    $createSubfolder = New-Item -ItemType Directory -Path "$FSXPATH\$PROJECTNAME\$DIR"
+}
+$subfolders = Get-ChildItem -Directory -Path "$FSXPATH\$PROJECTNAME"
+$checkSubfolders = ($subfolders | Measure-Object).Count
+$subfolderArray = $subfolders.Name
+if ($checkSubfolders -ne $FOLDERARRAY.length) {
+    Remove-Item -Path "$FSXPATH\$PROJECTNAME" -Recurse
+    outputScript 0 'Project subfolders not created'
+}
+outputScript 1 "Subfolders created are: $SUBFOLDERSARRAY"
+
+# Granting Permissions
+$mainFolderInfo = Get-Acl -Path "$FSXPATH\$PROJECTNAME"
+$ACCESSARRAY = 'CreateFiles', 'WriteExtendedAttributes', 'WriteAttributes', 'Delete', 'ReadAndExecute', 'Synchronize'
+$INHERITANCE = 'ContainerInherit, ObjectInherit'
+ForEach ($ACCESS in $ACCESSARRAY) {
+    $permission = New-Object System.Security.AccessControl.FileSystemAccessRule("$ADACCOUNT", "$ACCESS", "$INHERITANCE", "None", "Allow")
+    $mainFolderInfo.AddAccessRule($permission)
+    Set-Acl -Path "$FSXPATH\$PROJECTNAME" -AclObject $mainFolderInfo
+}
+$checkPermission1 = (($mainFolderInfo.Access.IdentityReference) | Where-Object {$_.Value -match "$ADACCOUNT"}).Value.Split('\')[-1] -eq "$ADACCOUNT"
+$checkPermission2 = ($mainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADACCOUNT"}).FileSystemRights
+ForEach ($ACCESS in $ACCESSARRAY) {
+    if ($checkPermission2 -NotLike "*$ACCESS*") {
+        Remove-Item -Path "$FSXPATH\$PROJECTNAME" -Recurse
+        outputScript 1 "$ACCESS not granted"
     }
-} else {
-    Write-Output 'Mounting FSx: Unsuccessful'
-    Write-Output '====='
-    Write-Output 'Onboarding: Unsuccessful'
-} 
+}
+if ($checkPermission1 -ne $True) {
+    Remove-Item -Path "$FSXPATH\$PROJECTNAME" -Recurse
+    outputScript 1 'Permissions not granted successfully'
+}
+outputScript 0 'Permissions granted'
+
+# Onboarding Info
+$path = $mainFolderInfo | Select-Object Path
+$ADUser = ($mainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADACCOUNT"}).IdentityReference
+$accessGiven = ($mainFolderInfo.Access | Where-Object {$_.IdentityReference -match "$ADACCOUNT"}).FileSystemRights
+Write-Output '====='
+Write-Output "Path: $path"
+Write-Output "AD Account: $ADUser"
+Write-Output "Access Given: $accessGiven"
+Write-Output '====='
+outputScript 1 'Onboarding Complete'
